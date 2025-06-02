@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game Event Tracker with Editable Stats</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    margin: 0; padding: 0;
+  }
+  .container {
+    max-width: 700px;
+    margin: 30px auto;
+    background: #222;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  h1, h3 {
+    text-align: center;
+  }
+  label {
+    display: block;
+    margin: 10px 0 4px;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 6px;
+    border-radius: 4px;
+    border: none;
+    font-size: 1rem;
+  }
+  button {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 10px 5px 10px 0;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  ul li {
+    margin-bottom: 6px;
+  }
+  #eventsList {
+    margin-top: 15px;
+  }
+  .event-item {
+    background: #333;
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .event-text {
+    flex-grow: 1;
+    margin-right: 10px;
+  }
+  .event-time {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  .event-actions button {
+    background: #777;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+  .event-actions button:hover {
+    background: #555;
+  }
+  input[type="number"].stat-input {
+    width: 60px;
+    background:#222;
+    color:#eee;
+    border:none;
+    border-radius:4px;
+    text-align:center;
+  }
+  #fileInput {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Game Event Tracker</h1>
+
+  <label for="eventText">Add New Event (e.g. "Kill", "Death", "Assist"):</label>
+  <input type="text" id="eventText" placeholder="Enter event description" />
+  <button onclick="addEvent()">Add Event</button>
+
+  <div id="eventsList"></div>
+
+  <h3>Session Summary (Editable)</h3>
+  <ul>
+    <li>Kills: <input type="number" min="0" id="statKill" class="stat-input" value="0" /></li>
+    <li>Deaths: <input type="number" min="0" id="statDeath" class="stat-input" value="0" /></li>
+    <li>Assists: <input type="number" min="0" id="statAssist" class="stat-input" value="0" /></li>
+    <li>Pickups: <input type="number" min="0" id="statPickup" class="stat-input" value="0" /></li>
+    <li>Objectives: <input type="number" min="0" id="statObjective" class="stat-input" value="0" /></li>
+  </ul>
+
+  <button onclick="exportSession()">Export Session</button>
+  <button onclick="document.getElementById('fileInput').click()">Import Session</button>
+  <input type="file" id="fileInput" accept=".json" onchange="importSession(event)" />
+  <button onclick="clearSession()">Clear Session</button>
+</div>
+
+<script>
+  // Blockchain block class
+  class Block {
+    constructor(index, timestamp, data, previousHash = '') {
+      this.index = index;
+      this.timestamp = timestamp;
+      this.data = data;
+      this.previousHash = previousHash;
+      this.hash = this.calculateHash();
+    }
+    calculateHash() {
+      // simple hash: sum char codes + previousHash
+      let str = this.index + this.timestamp + this.data + this.previousHash;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0; // convert to 32bit int
+      }
+      return hash.toString();
+    }
+  }
+
+  // Blockchain class
+  class Blockchain {
+    constructor() {
+      this.chain = [this.createGenesisBlock()];
+    }
+    createGenesisBlock() {
+      return new Block(0, new Date().toISOString(), "Genesis Block", "0");
+    }
+    getLatestBlock() {
+      return this.chain[this.chain.length - 1];
+    }
+    addBlock(newBlock) {
+      newBlock.previousHash = this.getLatestBlock().hash;
+      newBlock.hash = newBlock.calculateHash();
+      this.chain.push(newBlock);
+    }
+    getAllData() {
+      // skip genesis block
+      return this.chain.slice(1).map(b => ({ text: b.data, timestamp: b.timestamp }));
+    }
+    clearChain() {
+      this.chain = [this.createGenesisBlock()];
+    }
+  }
+
+  const blockchain = new Blockchain();
+
+  // UI update functions
+  function updateEventsList() {
+    const events = blockchain.getAllData();
+    const listDiv = document.getElementById('eventsList');
+    listDiv.innerHTML = '';
+
+    events.forEach((e, i) => {
+      const div = document.createElement('div');
+      div.className = 'event-item';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'event-text';
+      textDiv.textContent = e.text;
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'event-time';
+      timeDiv.textContent = new Date(e.timestamp).toLocaleString();
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'event-actions';
+
+      // Edit button
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => editEvent(i);
+
+      // Delete button
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => deleteEvent(i);
+
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(delBtn);
+
+      div.appendChild(textDiv);
+      div.appendChild(timeDiv);
+      div.appendChild(actionsDiv);
+
+      listDiv.appendChild(div);
+    });
+  }
+
+  // Add event
+  function addEvent() {
+    const input = document.getElementById('eventText');
+    const text = input.value.trim();
+    if (!text) {
+      alert("Please enter an event description.");
+      return;
+    }
+
+    const newBlock = new Block(blockchain.chain.length, new Date().toISOString(), text);
+    blockchain.addBlock(newBlock);
+
+    input.value = '';
+    updateEventsList();
+    updateStats();
+  }
+
+  // Edit event
+  function editEvent(index) {
+    const events = blockchain.getAllData();
+    const currentText = events[index].text;
+    const newText = prompt("Edit event:", currentText);
+    if (newText !== null && newText.trim() !== '') {
+      // Replace event in blockchain - For demo only, we rebuild chain from genesis + all except modified + new block
+      let newChain = blockchain.chain.slice(0, 1); // genesis block
+      for(let i = 1; i < blockchain.chain.length; i++) {
+        if(i === index + 1) {
+          // replaced block
+          const b = new Block(i, new Date().toISOString(), newText, newChain[i-1].hash);
+          newChain.push(b);
+        } else {
+          // keep existing blocks but fix previousHash and hash due to chain change
+          let data = blockchain.chain[i].data;
+          let b = new Block(newChain.length, blockchain.chain[i].timestamp, data, newChain[newChain.length-1].hash);
+          newChain.push(b);
+        }
+      }
+      blockchain.chain = newChain;
+      updateEventsList();
+      updateStats();
+    }
+  }
+
+  // Delete event
+  function deleteEvent(index) {
+    if(!confirm("Delete this event?")) return;
+
+    let newChain = blockchain.chain.slice(0, 1); // genesis block
+    for(let i=1; i<blockchain.chain.length; i++) {
+      if(i !== index + 1) {
+        let data = blockchain.chain[i].data;
+        let b = new Block(newChain.length, blockchain.chain[i].timestamp, data, newChain[newChain.length-1].hash);
+        newChain.push(b);
+      }
+    }
+    blockchain.chain = newChain;
+    updateEventsList();
+    updateStats();
+  }
+
+  // Update stats inputs based on events
+  function updateStats() {
+    const events = blockchain.getAllData();
+
+    let kills=0, deaths=0, assists=0, pickups=0, objectives=0;
+    events.forEach(e => {
+      const t = e.text.toLowerCase();
+      if (t.includes("kill")) kills++;
+      else if (t.includes("death")) deaths++;
+      else if (t.includes("assist")) assists++;
+      else if (t.includes("pickup")) pickups++;
+      else if (t.includes("objective")) objectives++;
+    });
+
+    document.getElementById('statKill').value = kills;
+    document.getElementById('statDeath').value = deaths;
+    document.getElementById('statAssist').value = assists;
+    document.getElementById('statPickup').value = pickups;
+    document.getElementById('statObjective').value = objectives;
+  }
+
+  // Export session to JSON file
+  function exportSession() {
+    const data = {
+      chain: blockchain.chain,
+      manualStats: {
+        kills: Number(document.getElementById('statKill').value),
+        deaths: Number(document.getElementById('statDeath').value),
+        assists: Number(document.getElementById('statAssist').value),
+        pickups: Number(document.getElementById('statPickup').value),
+        objectives: Number(document.getElementById('statObjective').value),
+      }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "game_event_session.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Import session from JSON file
+  function importSession(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.chain || !Array.isArray(data.chain)) throw new Error("Invalid data");
+
+        blockchain.chain = data.chain.map((b, i) => {
+          // Rebuild blocks to fix hashes & prev hashes in case
+          return new Block(
+            b.index,
+            b.timestamp,
+            b.data,
+            i > 0 ? data.chain[i-1].hash : "0"
+          );
+        });
+
+        // Fix hashes after rebuild
+        for(let i=1; i<blockchain.chain.length; i++) {
+          blockchain.chain[i].previousHash = blockchain.chain[i-1].hash;
+          blockchain.chain[i].hash = blockchain.chain[i].calculateHash();
+        }
+
+        updateEventsList();
+
+        if (data.manualStats) {
+          document.getElementById('statKill').value = data.manualStats.kills || 0;
+          document.getElementById('statDeath').value = data.manualStats.deaths || 0;
+          document.getElementById('statAssist').value = data.manualStats.assists || 0;
+          document.getElementById('statPickup').value = data.manualStats.pickups || 0;
+          document.getElementById('statObjective').value = data.manualStats.objectives || 0;
+        } else {
+          updateStats();
+        }
+
+        alert("Session imported successfully!");
+      } catch (err) {
+        alert("Failed to import session: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = null; // reset file input
+  }
+
+  // Clear session (reset blockchain and stats)
+  function clearSession() {
+    if(!confirm("Clear entire session? This cannot be undone.")) return;
+    blockchain.clearChain();
+    updateEventsList();
+    // Reset stats inputs
+    document.getElementById('statKill').value = 0;
+    document.getElementById('statDeath').value = 0;
+    document.getElementById('statAssist').value = 0;
+    document.getElementById('statPickup').value = 0;
+    document.getElementById('statObjective').value = 0;
+  }
+
+  // Initial UI update
+  updateEventsList();
+  updateStats();
+</script>
+
+</body>
+</html>

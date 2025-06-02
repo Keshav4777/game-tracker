@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Game Tracker</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #222;
+            --bg-hover: #333;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --accent: #4da6ff;
+            --positive: #4dff4d;
+            --negative: #ff4d4d;
+            --warning: #ffd633;
+            --border: #444;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #fff;
+            --bg-hover: #eee;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent: #0066cc;
+            --positive: #00a300;
+            --negative: #cc0000;
+            --warning: #cc9900;
+            --border: #ddd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-box h3 {
+            margin-top: 0;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .positive { color: var(--positive); }
+        .negative { color: var(--negative); }
+        .warning { color: var(--warning); }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .trend-icon {
+            margin-right: 5px;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (min-width: 1200px) {
+            .charts-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .blockchain-info {
+            margin-top: 30px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .blockchain-title {
+            color: var(--accent);
+            margin-top: 0;
+        }
+
+        .blockchain-data {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .block {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .block:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .block-header {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .add-data-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-input {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .form-button:hover {
+            background: #3a8fd9;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Blockchain Game Performance Tracker</h1>
+        <button class="theme-toggle" id="themeToggle">
+            <span class="icon">🌙</span>
+            <span class="text">Dark Mode</span>
+        </button>
+    </header>
+
+    <div class="stats-container">
+        <div class="stat-box">
+            <h3>Kills <span class="tooltip">?<span class="tooltiptext">Total kills across all matches</span></span></h3>
+            <div class="stat-value" id="kills">0</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="killsTrendIcon">→</span>
+                <span id="killsTrendText">No change</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>Assists <span class="tooltip">?<span class="tooltiptext">Total assists across all matches</span></span></h3>
+            <div class="stat-value" id="assists">0</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="assistsTrendIcon">→</span>
+                <span id="assistsTrendText">No change</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>Survival Rate <span class="tooltip">?<span class="tooltiptext">Percentage of matches survived</span></span></h3>
+            <div class="stat-value" id="survival">0%</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="survivalTrendIcon">→</span>
+                <span id="survivalTrendText">No change</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>Win Rate <span class="tooltip">?<span class="tooltiptext">Percentage of matches won</span></span></h3>
+            <div class="stat-value" id="wins">0%</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="winsTrendIcon">→</span>
+                <span id="winsTrendText">No change</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>K/D Ratio <span class="tooltip">?<span class="tooltiptext">Kill to Death ratio</span></span></h3>
+            <div class="stat-value" id="kdRatio">0.00</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="kdTrendIcon">→</span>
+                <span id="kdTrendText">No change</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>Avg. Damage <span class="tooltip">?<span class="tooltiptext">Average damage per match</span></span></h3>
+            <div class="stat-value" id="avgDamage">0</div>
+            <div class="stat-trend">
+                <span class="trend-icon" id="damageTrendIcon">→</span>
+                <span id="damageTrendText">No change</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <h3 class="chart-title">Performance Overview</h3>
+            <canvas id="performanceChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3 class="chart-title">Historical Trends</h3>
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <div class="blockchain-info">
+        <h3 class="blockchain-title">Blockchain Data Storage</h3>
+        <p>Your game performance data is stored in a simulated blockchain for transparency and immutability.</p>
+        
+        <div class="blockchain-data" id="blockchainData">
+            <p>Loading blockchain data...</p>
+        </div>
+
+        <div class="add-data-form">
+            <input type="number" class="form-input" id="killsInput" placeholder="Kills" min="0">
+            <input type="number" class="form-input" id="assistsInput" placeholder="Assists" min="0">
+            <input type="number" class="form-input" id="deathsInput" placeholder="Deaths" min="0">
+            <input type="number" class="form-input" id="damageInput" placeholder="Damage" min="0">
+            <select class="form-input" id="resultInput">
+                <option value="win">Win</option>
+                <option value="loss">Loss</option>
+                <option value="survived">Survived</option>
+            </select>
+            <button class="form-button" id="addDataButton">Add Match Data</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('.icon');
+        const themeText = themeToggle.querySelector('.text');
+        
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        updateThemeButton(currentTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton(newTheme);
+        });
+        
+        function updateThemeButton(theme) {
+            if (theme === 'dark') {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light Mode';
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            }
+        }
+
+        // Simulated Blockchain
+        class Block {
+            constructor(index, timestamp, data, previousHash = '') {
+                this.index = index;
+                this.timestamp = timestamp;
+                this.data = data;
+                this.previousHash = previousHash;
+                this.hash = this.calculateHash();
+            }
+            
+            calculateHash() {
+                // Simple hash simulation
+                return String(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).length.toString(16);
+            }
+        }
+        
+        class Blockchain {
+            constructor() {
+                this.chain = this.loadChainFromStorage() || [this.createGenesisBlock()];
+            }
+            
+            createGenesisBlock() {
+                return new Block(0, new Date().toISOString(), { message: "Genesis Block" }, "0");
+            }
+            
+            loadChainFromStorage() {
+                const chainData = localStorage.getItem('gameBlockchain');
+                if (chainData) {
+                    return JSON.parse(chainData);
+                }
+                return null;
+            }
+            
+            saveChainToStorage() {
+                localStorage.setItem('gameBlockchain', JSON.stringify(this.chain));
+            }
+            
+            addBlock(data) {
+                const previousBlock = this.chain[this.chain.length - 1];
+                const newBlock = new Block(
+                    this.chain.length,
+                    new Date().toISOString(),
+                    data,
+                    previousBlock.hash
+                );
+                
+                this.chain.push(newBlock);
+                this.saveChainToStorage();
+                return newBlock;
+            }
+            
+            getPerformanceData() {
+                const data = {
+                    totalKills: 0,
+                    totalAssists: 0,
+                    totalDeaths: 0,
+                    totalDamage: 0,
+                    matchesPlayed: 0,
+                    matchesWon: 0,
+                    matchesSurvived: 0,
+                    history: []
+                };
+                
+                // Skip genesis block
+                for (let i = 1; i < this.chain.length; i++) {
+                    const blockData = this.chain[i].data;
+                    
+                    if (blockData.kills !== undefined) {
+                        data.totalKills += blockData.kills || 0;
+                        data.totalAssists += blockData.assists || 0;
+                        data.totalDeaths += blockData.deaths || 0;
+                        data.totalDamage += blockData.damage || 0;
+                        data.matchesPlayed++;
+                        
+                        if (blockData.result === 'win') data.matchesWon++;
+                        if (blockData.result === 'survived' || blockData.result === 'win') data.matchesSurvived++;
+                        
+                        // Add to history for trends
+                        data.history.push({
+                            timestamp: this.chain[i].timestamp,
+                            kills: blockData.kills || 0,
+                            assists: blockData.assists || 0,
+                            deaths: blockData.deaths || 0,
+                            damage: blockData.damage || 0,
+                            result: blockData.result
+                        });
+                    }
+                }
+                
+                return data;
+            }
+            
+            getPreviousPeriodData(currentData) {
+                // Get data from previous period (half the matches) for comparison
+                const halfPoint = Math.floor(currentData.history.length / 2);
+                const previousData = {
+                    totalKills: 0,
+                    totalAssists: 0,
+                    totalDeaths: 0,
+                    totalDamage: 0,
+                    matchesPlayed: 0,
+                    matchesWon: 0,
+                    matchesSurvived: 0
+                };
+                
+                for (let i = 0; i < halfPoint; i++) {
+                    const matchData = currentData.history[i];
+                    
+                    previousData.totalKills += matchData.kills;
+                    previousData.totalAssists += matchData.assists;
+                    previousData.totalDeaths += matchData.deaths;
+                    previousData.totalDamage += matchData.damage;
+                    previousData.matchesPlayed++;
+                    
+                    if (matchData.result === 'win') previousData.matchesWon++;
+                    if (matchData.result === 'survived' || matchData.result === 'win') previousData.matchesSurvived++;
+                }
+                
+                return previousData;
+            }
+        }
+        
+        // Initialize blockchain
+        const gameBlockchain = new Blockchain();
+        
+        // UI Functions
+        function updateUI() {
+            const performanceData = gameBlockchain.getPerformanceData();
+            const previousData = gameBlockchain.getPreviousPeriodData(performanceData);
+            
+            // Update stats
+            document.getElementById('kills').textContent = performanceData.totalKills;
+            document.getElementById('assists').textContent = performanceData.totalAssists;
+            
+            const survivalRate = performanceData.matchesPlayed > 0 
+                ? Math.round((performanceData.matchesSurvived / performanceData.matchesPlayed) * 100)
+                : 0;
+            document.getElementById('survival').textContent = `${survivalRate}%`;
+            
+            const winRate = performanceData.matchesPlayed > 0 
+                ? Math.round((performanceData.matchesWon / performanceData.matchesPlayed) * 100)
+                : 0;
+            document.getElementById('wins').textContent = `${winRate}%`;
+            
+            const kdRatio = performanceData.totalDeaths > 0 
+                ? (performanceData.totalKills / performanceData.totalDeaths).toFixed(2)
+                : performanceData.totalKills > 0 ? performanceData.totalKills.toFixed(2) : "0.00";
+            document.getElementById('kdRatio').textContent = kdRatio;
+            
+            const avgDamage = performanceData.matchesPlayed > 0 
+                ? Math.round(performanceData.totalDamage / performanceData.matchesPlayed)
+                : 0;
+            document.getElementById('avgDamage').textContent = avgDamage;
+            
+            // Update trends
+            updateTrend('kills', performanceData.totalKills, previousData.totalKills);
+            updateTrend('assists', performanceData.totalAssists, previousData.totalAssists);
+            updateTrend('survival', survivalRate, 
+                previousData.matchesPlayed > 0 
+                    ? Math.round((previousData.matchesSurvived / previousData.matchesPlayed) * 100)
+                    : 0);
+            updateTrend('wins', winRate, 
+                previousData.matchesPlayed > 0 
+                    ? Math.round((previousData.matchesWon / previousData.matchesPlayed) * 100)
+                    : 0);
+            updateTrend('kd', parseFloat(kdRatio), 
+                previousData.totalDeaths > 0 
+                    ? (previousData.totalKills / previousData.totalDeaths)
+                    : previousData.totalKills > 0 ? previousData.totalKills : 0);
+            updateTrend('damage', avgDamage, 
+                previousData.matchesPlayed > 0 
+                    ? Math.round(previousData.totalDamage / previousData.matchesPlayed)
+                    : 0);
+            
+            // Update charts
+            updateCharts(performanceData);
+            
+            // Update blockchain display
+            updateBlockchainDisplay();
+        }
+        
+        function updateTrend(stat, currentValue, previousValue) {
+            if (typeof previousValue === 'undefined' || previousValue === 0) {
+                document.getElementById(`${stat}TrendIcon`).textContent = '→';
+                document.getElementById(`${stat}TrendIcon`).style.color = 'var(--warning)';
+                document.getElementById(`${stat}TrendText`).textContent = 'No previous data';
+                document.getElementById(`${stat}TrendText`).style.color = 'var(--text-secondary)';
+                return;
+            }
+            
+            const change = ((currentValue - previousValue) / previousValue) * 100;
+            const absChange = Math.abs(change);
+            
+            const trendIcon = document.getElementById(`${stat}TrendIcon`);
+            const trendText = document.getElementById(`${stat}TrendText`);
+            
+            if (change > 5) {
+                trendIcon.textContent = '↑';
+                trendIcon.style.color = 'var(--positive)';
+                trendText.textContent = `${absChange.toFixed(1)}% increase`;
+                trendText.style.color = 'var(--positive)';
+            } else if (change < -5) {
+                trendIcon.textContent = '↓';
+                trendIcon.style.color = 'var(--negative)';
+                trendText.textContent = `${absChange.toFixed(1)}% decrease`;
+                trendText.style.color = 'var(--negative)';
+            } else {
+                trendIcon.textContent = '→';
+                trendIcon.style.color = 'var(--warning)';
+                trendText.textContent = 'No significant change';
+                trendText.style.color = 'var(--text-secondary)';
+            }
+        }
+        
+        function updateCharts(performanceData) {
+            // Performance Overview Chart
+            const ctx1 = document.getElementById('performanceChart').getContext('2d');
+            
+            if (window.performanceChart) {
+                window.performanceChart.destroy();
+            }
+            
+            window.performanceChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ["Kills", "Assists", "Survival Rate", "Win Rate", "K/D Ratio", "Avg Damage"],
+                    datasets: [{
+                        label: 'Current Stats',
+                        data: [
+                            performanceData.totalKills,
+                            performanceData.totalAssists,
+                            performanceData.matchesPlayed > 0 
+                                ? (performanceData.matchesSurvived / performanceData.matchesPlayed) * 100
+                                : 0,
+                            performanceData.matchesPlayed > 0 
+                                ? (performanceData.matchesWon / performanceData.matchesPlayed) * 100
+                                : 0,
+                            performanceData.totalDeaths > 0 
+                                ? performanceData.totalKills / performanceData.totalDeaths
+                                : performanceData.totalKills > 0 ? performanceData.totalKills : 0,
+                            performanceData.matchesPlayed > 0 
+                                ? performanceData.totalDamage / performanceData.matchesPlayed
+                                : 0
+                        ],
+                        backgroundColor: [
+                            'rgba(255, 77, 77, 0.7)',
+                            'rgba(77, 166, 255, 0.7)',
+                            'rgba(255, 214, 51, 0.7)',
+                            'rgba(77, 255, 77, 0.7)',
+                            'rgba(200, 100, 255, 0.7)',
+                            'rgba(255, 150, 50, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 77, 77, 1)',
+                            'rgba(77, 166, 255, 1)',
+                            'rgba(255, 214, 51, 1)',
+                            'rgba(77, 255, 77, 1)',
+                            'rgba(200, 100, 255, 1)',
+                            'rgba(255, 150, 50, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'var(--border)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'var(--border)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'var(--text-primary)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Historical Trends Chart
+            const ctx2 = document.getElementById('trendChart').getContext('2d');
+            
+            if (window.trendChart) {
+                window.trendChart.destroy();
+            }
+            
+            // Prepare trend data (last 10 matches or all if less than 10)
+            const recentMatches = performanceData.history.slice(-10);
+            const labels = recentMatches.map((_, index) => `Match ${performanceData.history.length - recentMatches.length + index + 1}`);
+            
+            window.trendChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Kills',
+                            data: recentMatches.map(match => match.kills),
+                            borderColor: 'rgba(255, 77, 77, 1)',
+                            backgroundColor: 'rgba(255, 77, 77, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Assists',
+                            data: recentMatches.map(match => match.assists),
+                            borderColor: 'rgba(77, 166, 255, 1)',
+                            backgroundColor: 'rgba(77, 166, 255, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Damage',
+                            data: recentMatches.map(match => match.damage),
+                            borderColor: 'rgba(255, 150, 50, 1)',
+                            backgroundColor: 'rgba(255, 150, 50, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: 'var(--border)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'var(--border)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'var(--border)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'var(--text-primary)'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateBlockchainDisplay() {
+            const blockchainDataElement = document.getElementById('blockchainData');
+            blockchainDataElement.innerHTML = '';
+            
+            // Show last 5 blocks (excluding genesis)
+            const displayBlocks = gameBlockchain.chain.slice(Math.max(gameBlockchain.chain.length - 5, 1));
+            
+            if (displayBlocks.length === 0) {
+                blockchainDataElement.innerHTML = '<p>No match data recorded yet. Add your first match!</p>';
+                return;
+            }
+            
+            displayBlocks.reverse().forEach(block => {
+                const blockElement = document.createElement('div');
+                blockElement.className = 'block';
+                
+                const header = document.createElement('div');
+                header.className = 'block-header';
+                header.textContent = `Block #${block.index} - ${new Date(block.timestamp).toLocaleString()}`;
+                
+                const hash = document.createElement('div');
+                hash.textContent = `Hash: ${block.hash}`;
+                
+                const prevHash = document.createElement('div');
+                prevHash.textContent = `Prev Hash: ${block.previousHash}`;
+                
+                const data = document.createElement('div');
+                const dataContent = Object.entries(block.data).map(([key, value]) => 
+                    `${key}: ${key === 'result' ? value : (typeof value === 'number' ? value : JSON.stringify(value))}`
+                ).join(', ');
+                data.textContent = `Data: ${dataContent}`;
+                
+                blockElement.appendChild(header);
+                blockElement.appendChild(hash);
+                blockElement.appendChild(prevHash);
+                blockElement.appendChild(data);
+                
+                blockchainDataElement.appendChild(blockElement);
+            });
+        }
+        
+        // Add Data Form
+        document.getElementById('addDataButton').addEventListener('click', () => {
+            const kills = parseInt(document.getElementById('killsInput').value) || 0;
+            const assists = parseInt(document.getElementById('assistsInput').value) || 0;
+            const deaths = parseInt(document.getElementById('deathsInput').value) || 0;
+            const damage = parseInt(document.getElementById('damageInput').value) || 0;
+            const result = document.getElementById('resultInput').value;
+            
+            if (kills === 0 && assists === 0 && deaths === 0 && damage === 0) {
+                alert('Please enter at least some data for the match');
+                return;
+            }
+            
+            const matchData = {
+                kills: kills,
+                assists: assists,
+                deaths: deaths,
+                damage: damage,
+                result: result
+            };
+            
+            gameBlockchain.addBlock(matchData);
+            updateUI();
+            
+            // Clear form
+            document.getElementById('killsInput').value = '';
+            document.getElementById('assistsInput').value = '';
+            document.getElementById('deathsInput').value = '';
+            document.getElementById('damageInput').value = '';
+        });
+        
+        // Initialize with sample data if blockchain is empty
+        if (gameBlockchain.chain.length === 1) {
+            // Add some sample matches if this is a new user
+            const sampleMatches = [
+                { kills: 5, assists: 3, deaths: 2, damage: 1200, result: 'win' },
+                { kills: 3, assists: 5, deaths: 4, damage: 800, result: 'loss' },
+                { kills: 7, assists: 2, deaths: 1, damage: 1500, result: 'win' },
+                { kills: 2, assists: 6, deaths: 3, damage: 600, result: 'survived' },
+                { kills: 4, assists: 4, deaths: 4, damage: 1100, result: 'loss' },
+                { kills: 6, assists: 1, deaths: 0, damage: 1800, result: 'win' }
+            ];
+            
+            sampleMatches.forEach(match => {
+                gameBlockchain.addBlock(match);
+            });
+        }
+        
+        // Initial UI update
+        updateUI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game Library with Editable Intros & Blockchain History</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    margin: 20px;
+  }
+  .games-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .game-card {
+    background: #222;
+    border-radius: 8px;
+    width: 140px;
+    padding: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.3s;
+  }
+  .game-card:hover {
+    background: #444;
+  }
+  .game-card img {
+    width: 100%;
+    border-radius: 6px;
+  }
+  #gameIntro {
+    margin-top: 30px;
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  #gameIntro h2 {
+    margin-top: 0;
+  }
+  #editIntroSection {
+    margin-top: 20px;
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  #editIntroSection textarea {
+    width: 100%;
+    height: 100px;
+    border-radius: 6px;
+    background: #121212;
+    border: 1px solid #555;
+    color: #eee;
+    padding: 10px;
+    font-size: 14px;
+    resize: vertical;
+  }
+  #editIntroSection button {
+    margin-top: 10px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  #editIntroSection button:hover {
+    background-color: #45a049;
+  }
+  #blockchainHistory {
+    margin-top: 40px;
+    background: #222;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  #blockchainHistory h3 {
+    margin-top: 0;
+  }
+  .block {
+    border: 1px solid #444;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<h1>Game Library with Editable Intros & Blockchain History</h1>
+
+<div class="games-list" id="gamesList"></div>
+
+<div id="gameIntro">
+  <h2>Select a game to see details</h2>
+  <p>Click on any game above to read its introduction.</p>
+</div>
+
+<!-- Intro Editor -->
+<div id="editIntroSection" style="display:none;">
+  <h3>Edit Game Introduction</h3>
+  <textarea id="introEditor"></textarea><br />
+  <button onclick="saveIntro()">Save Intro</button>
+</div>
+
+<div id="blockchainHistory">
+  <h3>Viewed Games History (Blockchain)</h3>
+  <div id="blocksContainer">No history yet.</div>
+</div>
+
+<script>
+// Blockchain classes (simplified)
+
+class Block {
+  constructor(index, timestamp, data, previousHash = '') {
+    this.index = index;
+    this.timestamp = timestamp;
+    this.data = data;
+    this.previousHash = previousHash;
+    this.hash = this.calculateHash();
+  }
+
+  calculateHash() {
+    const str = this.index + this.timestamp + JSON.stringify(this.data) + this.previousHash;
+    let hash = 0, i, chr;
+    for (i = 0; i < str.length; i++) {
+      chr = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash |= 0;
+    }
+    return hash.toString();
+  }
+}
+
+class Blockchain {
+  constructor() {
+    this.chain = [this.createGenesisBlock()];
+  }
+
+  createGenesisBlock() {
+    return new Block(0, new Date().toISOString(), "Genesis Block", "0");
+  }
+
+  getLatestBlock() {
+    return this.chain[this.chain.length - 1];
+  }
+
+  addBlock(data) {
+    const previousHash = this.getLatestBlock().hash;
+    const newBlock = new Block(this.chain.length, new Date().toISOString(), data, previousHash);
+    this.chain.push(newBlock);
+    return newBlock;
+  }
+}
+
+const blockchain = new Blockchain();
+
+let selectedGameId = null;
+
+// Default games data
+const defaultGames = [
+  { id: 1, name: "Minecraft", thumbnail: "https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png", intro: "A sandbox game about placing blocks and going on adventures in endless worlds." },
+  { id: 2, name: "Fortnite", thumbnail: "https://upload.wikimedia.org/wikipedia/en/thumb/0/09/Fortnite_cover_art.jpg/220px-Fortnite_cover_art.jpg", intro: "A battle royale game where players fight to be the last one standing." },
+  { id: 3, name: "Among Us", thumbnail: "https://upload.wikimedia.org/wikipedia/en/9/9a/Among_Us_cover_art.png", intro: "A multiplayer game of teamwork and betrayal on a spaceship." },
+  { id: 4, name: "Call of Duty", thumbnail: "https://upload.wikimedia.org/wikipedia/en/9/9f/Call_of_Duty_Modern_Warfare_3_cover_art.jpg", intro: "A first-person shooter series with intense multiplayer and story modes." },
+  { id: 5, name: "League of Legends", thumbnail: "https://upload.wikimedia.org/wikipedia/en/7/77/League_of_Legends_cover_art.jpg", intro: "A competitive online MOBA where two teams battle to destroy each other's base." },
+  { id: 6, name: "Valorant", thumbnail: "https://upload.wikimedia.org/wikipedia/en/0/0f/Valorant_cover_art.png", intro: "A tactical shooter combining precise gunplay with agent abilities." },
+  { id: 7, name: "Overwatch", thumbnail: "https://upload.wikimedia.org/wikipedia/en/5/51/Overwatch_cover_art.jpg", intro: "A team-based shooter featuring unique heroes and abilities." },
+  { id: 8, name: "Animal Crossing", thumbnail: "https://upload.wikimedia.org/wikipedia/en/a/a7/Animal_Crossing_New_Horizons.jpg", intro: "A relaxing life simulation game where you build your island paradise." },
+  { id: 9, name: "The Legend of Zelda", thumbnail: "https://upload.wikimedia.org/wikipedia/en/9/99/The_Legend_of_Zelda_Breath_of_the_Wild.jpg", intro: "An action-adventure game series featuring exploration and puzzle-solving." },
+  { id: 10, name: "GTA V", thumbnail: "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png", intro: "An open-world action game with story missions and multiplayer." },
+  { id: 11, name: "Cyberpunk 2077", thumbnail: "https://upload.wikimedia.org/wikipedia/en/9/9f/Cyberpunk_2077_box_art.jpg", intro: "A futuristic open-world RPG with story-rich gameplay." },
+  { id: 12, name: "Dota 2", thumbnail: "https://upload.wikimedia.org/wikipedia/en/3/3f/Dota_2_cover_art.jpg", intro: "A highly competitive MOBA with a steep learning curve." },
+  { id: 13, name: "Rocket League", thumbnail: "https://upload.wikimedia.org/wikipedia/en/7/73/Rocket_League_coverart.jpg", intro: "Soccer with rocket-powered cars." },
+  { id: 14, name: "PUBG", thumbnail: "https://upload.wikimedia.org/wikipedia/en/6/6d/PUBG_cover.jpg", intro: "The original battle royale shooter." },
+  { id: 15, name: "Minecraft Dungeons", thumbnail: "https://upload.wikimedia.org/wikipedia/en/7/7e/Minecraft_Dungeons_cover_art.jpg", intro: "An action-adventure dungeon crawler set in the Minecraft universe." },
+  { id: 16, name: "Apex Legends", thumbnail: "https://upload.wikimedia.org/wikipedia/en/5/5a/Apex_legends_cover.jpg", intro: "A fast-paced battle royale shooter with unique legends." },
+  { id: 17, name: "Among Trees", thumbnail: "https://upload.wikimedia.org/wikipedia/en/f/f4/Among_Trees_cover.jpg", intro: "A serene survival sandbox game in a vibrant forest." },
+  { id: 18, name: "Stardew Valley", thumbnail: "https://upload.wikimedia.org/wikipedia/en/f/fd/Stardew_Valley_Cover_Art.jpg", intro: "A farming and life simulation game with lots of activities." },
+  { id: 19, name: "Hades", thumbnail: "https://upload.wikimedia.org/wikipedia/en/9/9b/Hades_cover_art.jpg", intro: "A rogue-like dungeon crawler with Greek mythology themes." },
+  { id: 20, name: "Fall Guys", thumbnail: "https://upload.wikimedia.org/wikipedia/en/c/cb/Fall_Guys_cover_art.jpg", intro: "A crazy battle royale party game with obstacle courses." }
+];
+
+// Load games from localStorage if exist, else use default
+let games = JSON.parse(localStorage.getItem('gamesData')) || defaultGames;
+
+// Save games data to localStorage
+function saveGamesToStorage() {
+  localStorage.setItem('gamesData', JSON.stringify(games));
+}
+
+// Render game cards
+function renderGames() {
+  const container = document.getElementById('gamesList');
+  container.innerHTML = '';
+  games.forEach(game => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.innerHTML = `
+      <img src="${game.thumbnail}" alt="${game.name}" />
+      <h4>${game.name}</h4>
+    `;
+    card.onclick = () => selectGame(game.id);
+    container.appendChild(card);
+  });
+}
+
+// Render selected game intro & show editor
+function selectGame(id) {
+  selectedGameId = id;
+  const game = games.find(g => g.id === id);
+  if (!game) return;
+
+  // Show intro
+  const introDiv = document.getElementById('gameIntro');
+  introDiv.innerHTML = `
+    <h2>${game.name}</h2>
+    <p>${game.intro}</p>
+  `;
+
+  // Show editor
+  document.getElementById('editIntroSection').style.display = 'block';
+  document.getElementById('introEditor').value = game.intro;
+
+  // Add viewed event to blockchain history
+  const blockData = { gameId: game.id, name: game.name, timestamp: new Date().toISOString() };
+  const newBlock = blockchain.addBlock(blockData);
+  renderBlockchain();
+}
+
+// Save edited intro
+function saveIntro() {
+  if (selectedGameId === null) return;
+  const newIntro = document.getElementById('introEditor').value.trim();
+  if (!newIntro) {
+    alert("Intro cannot be empty.");
+    return;
+  }
+
+  // Update intro in games array
+  const gameIndex = games.findIndex(g => g.id === selectedGameId);
+  if (gameIndex !== -1) {
+    games[gameIndex].intro = newIntro;
+    saveGamesToStorage();
+    selectGame(selectedGameId); // Refresh display
+  }
+}
+
+// Render blockchain history on page
+function renderBlockchain() {
+  const container = document.getElementById('blocksContainer');
+  container.innerHTML = '';
+
+  blockchain.chain.forEach(block => {
+    const div = document.createElement('div');
+    div.className = 'block';
+    div.innerHTML = `
+      <strong>Block #${block.index}</strong><br />
+      Timestamp: ${block.timestamp}<br />
+      Data: ${block.data === "Genesis Block" ? block.data : `Viewed Game: ${block.data.name} (ID: ${block.data.gameId})`}
+      <br />
+      Hash: ${block.hash}<br />
+      Previous Hash: ${block.previousHash}
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Initial render
+renderGames();
+renderBlockchain();
+
+</script>
+
+</body>
+</html>

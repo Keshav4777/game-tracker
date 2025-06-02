@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameTracker - Top Features</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .feature-card {
+      transition: all 0.3s ease;
+      border-left: 5px solid transparent;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-left-color: #7e57c2;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">GameTracker</h1>
+      <ul class="flex gap-4">
+        <li><a href="game.html" class="hover:text-yellow-300">Home</a></li>
+        <li><a href="top-features.html" class="hover:text-yellow-300 font-bold">Top Features</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="py-16 px-4">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-4">Our Top 5 Features</h2>
+      <p class="text-center text-gray-600 max-w-2xl mx-auto mb-12">
+        Discover what makes GameTracker the ultimate gaming companion
+      </p>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="feature-card bg-white p-6 rounded-lg shadow-md">
+          <div class="text-purple-600 text-4xl mb-4">
+            <i class="fas fa-link"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Blockchain-Powered Data Storage</h3>
+          <p class="text-gray-600">
+            Your game collection secured with blockchain technology ensuring data integrity and permanence.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card bg-white p-6 rounded-lg shadow-md">
+          <div class="text-purple-600 text-4xl mb-4">
+            <i class="fas fa-database"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">RAWG API Integration</h3>
+          <p class="text-gray-600">
+            Access to 500,000+ games with automatic metadata import including covers, genres, and ratings.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card bg-white p-6 rounded-lg shadow-md">
+          <div class="text-purple-600 text-4xl mb-4">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Advanced Analytics</h3>
+          <p class="text-gray-600">
+            Comprehensive stats on your playtime, completion rates, and collection value over time.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card bg-white p-6 rounded-lg shadow-md">
+          <div class="text-purple-600 text-4xl mb-4">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Social Features</h3>
+          <p class="text-gray-600">
+            Compare collections with friends, share achievements, and discover new games together.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card bg-white p-6 rounded-lg shadow-md">
+          <div class="text-purple-600 text-4xl mb-4">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Cross-Platform Sync</h3>
+          <p class="text-gray-600">
+            Access your game data anywhere with our web, mobile, and desktop apps.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-gradient-to-br from-indigo-50 to-purple-50">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-8">Blockchain Technology</h2>
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-xl font-bold mb-4 text-purple-600">How It Works</h3>
+        <p class="mb-4">
+          Our simple blockchain implementation ensures your game data is:
+        </p>
+        <ul class="list-disc pl-6 mb-6 space-y-2">
+          <li><strong>Immutable</strong> - Once added, data cannot be altered</li>
+          <li><strong>Verifiable</strong> - Cryptographic hashes prove data integrity</li>
+          <li><strong>Decentralized</strong> - No single point of failure</li>
+        </ul>
+        <div class="bg-gray-100 p-4 rounded-md font-mono text-sm overflow-x-auto">
+          <p>// Sample block structure</p>
+          <p>{</p>
+          <p class="ml-4">"index": 1,</p>
+          <p class="ml-4">"timestamp": "2023-06-15T12:00:00Z",</p>
+          <p class="ml-4">"data": { /* Your game data */ },</p>
+          <p class="ml-4">"previousHash": "a1b2c3...",</p>
+          <p class="ml-4">"hash": "d4e5f6..."</p>
+          <p>}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-gray-900 text-white p-6 text-center">
+    <p>&copy; 2025 GameTracker. All rights reserved.</p>
+  </footer>
+</body>
+</html>

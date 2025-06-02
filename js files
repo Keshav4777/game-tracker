@@ -1,0 +1,171 @@
+\\auth.js\\
+class AuthSystem {
+  constructor() {
+    this.users = JSON.parse(localStorage.getItem('gameTrackerUsers')) || [];
+    this.currentUser = null;
+  }
+
+  register(username, email, password) {
+    if (this.users.some(u => u.email === email)) {
+      throw new Error('Email already registered');
+    }
+    
+    const user = {
+      id: Date.now().toString(),
+      username,
+      email,
+      password: CryptoJS.SHA256(password).toString(),
+      createdAt: new Date().toISOString(),
+      games: []
+    };
+    
+    this.users.push(user);
+    localStorage.setItem('gameTrackerUsers', JSON.stringify(this.users));
+    this.currentUser = user;
+    return user;
+  }
+
+  login(email, password) {
+    const user = this.users.find(u => u.email === email);
+    if (!user || user.password !== CryptoJS.SHA256(password).toString()) {
+      throw new Error('Invalid credentials');
+    }
+    this.currentUser = user;
+    return user;
+  }
+
+  logout() {
+    this.currentUser = null;
+  }
+
+  getCurrentUser() {
+    return this.currentUser;
+  }
+}
+
+const auth = new AuthSystem();
+\\calendar.js\\
+class GameCalendar {
+  constructor(games) {
+    this.games = games;
+  }
+
+  getUpcomingReleases(days = 30) {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+    
+    return this.games
+      .filter(game => game.releaseDate && new Date(game.releaseDate) > today)
+      .sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+  }
+
+  getRecentReleases(days = 30) {
+    const today = new Date();
+    const pastDate = new Date();
+    pastDate.setDate(today.getDate() - days);
+    
+    return this.games
+      .filter(game => game.releaseDate && new Date(game.releaseDate) <= today)
+      .sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
+  }
+}
+\\discord-rpc.js\\
+class DiscordRPC {
+  constructor(clientId) {
+    this.clientId = clientId;
+    this.rpc = require('discord-rpc');
+    this.client = new this.rpc.Client({ transport: 'ipc' });
+  }
+
+  initialize() {
+    this.client.on('ready', () => {
+      console.log('Discord RPC connected');
+    });
+
+    this.client.login({ clientId: this.clientId }).catch(console.error);
+  }
+
+  updatePresence(details, state, largeImageKey = 'game_logo') {
+    if (!this.client) return;
+    
+    this.client.setActivity({
+      details,
+      state,
+      largeImageKey,
+      largeImageText: 'GameTracker',
+      startTimestamp: new Date()
+    });
+  }
+}
+
+// Usage: 
+// const discordRPC = new DiscordRPC('YOUR_CLIENT_ID');
+// discordRPC.initialize();
+// discordRPC.updatePresence('Browsing game library', '5 games tracked');
+\\ratingsys.js
+// rating-system.js
+class RatingSystem {
+  constructor() {
+    this.ratings = JSON.parse(localStorage.getItem('gameRatings')) || {};
+  }
+
+  setRating(gameId, rating) {
+    this.ratings[gameId] = rating;
+    localStorage.setItem('gameRatings', JSON.stringify(this.ratings));
+  }
+
+  getRating(gameId) {
+    return this.ratings[gameId] || 0;
+  }
+}
+
+// Star Rating Component
+function renderStarRating(game) {
+  const currentRating = ratingSystem.getRating(game.id);
+  let stars = '';
+  for (let i = 1; i <= 5; i++) {
+    stars += `
+      <span class="star ${i <= currentRating ? 'filled' : ''}" 
+            data-rating="${i}" 
+            data-game-id="${game.id}">
+        ${i <= currentRating ? '★' : '☆'}
+      </span>
+    `;
+  }
+  return `<div class="star-rating">${stars}</div>`;
+}
+\\sts.js\\
+class GameStatistics {
+  constructor(games) {
+    this.games = games;
+  }
+
+  getPlatformDistribution() {
+    const platforms = {};
+    this.games.forEach(game => {
+      game.platforms?.forEach(platform => {
+        platforms[platform] = (platforms[platform] || 0) + 1;
+      });
+    });
+    return platforms;
+  }
+
+  getCompletionStats() {
+    return {
+      completed: this.games.filter(g => g.completionStatus === 'Completed').length,
+      inProgress: this.games.filter(g => g.completionStatus === 'In Progress').length,
+      notStarted: this.games.filter(g => g.completionStatus === 'Not Started').length,
+      abandoned: this.games.filter(g => g.completionStatus === 'Abandoned').length
+    };
+  }
+
+  getPlaytimeStats() {
+    const total = this.games.reduce((sum, game) => sum + (game.playtime || 0), 0);
+    return {
+      totalHours: total,
+      averageHours: total / this.games.length || 0,
+      longestGame: Math.max(...this.games.map(g => g.playtime || 0))
+    };
+  }
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toxicity Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #7b1fa2;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧩 Toxicity Analyzer</h1>
+
+    <textarea id="chatInput" placeholder="Enter chat message..."></textarea>
+    <button onclick="analyzeChat()">Analyze</button>
+    <p id="toxicityResult"></p>
+
+    <script>
+        const toxicWords = [
+  'noob', 'trash', 'stupid', 'hack', 'idiot', 'loser', 'fuck', 'shit',
+  'bitch', 'asshole', 'dumb', 'retard', 'moron', 'faggot', 'cunt', 'dick',
+  'prick', 'twat', 'nigger', 'whore', 'jerk', 'suck', 'kill yourself', 'kys',
+  'garbage', 'worthless', 'clown', 'scum', 'loser', 'bastard', 'douche',
+  'slut', 'freak', 'trashplayer', 'ragequit', 'no skill', 'sucks', 'idiotic',
+  'brain dead', 'useless', 'fuckface', 'cock', 'pussy', 'douchebag', 'retarded',
+  'shitty', 'wanker', 'asshat', 'dipshit', 'douchecanoe', 'loserass'
+
+]; // Expand this list as needed
+
+        function analyzeChat() {
+            const chatMessage = document.getElementById('chatInput').value.toLowerCase();
+            const containsToxic = toxicWords.some(word => chatMessage.includes(word));
+
+            document.getElementById('toxicityResult').innerText = 
+                containsToxic ? "⚠️ Toxic message detected!" : "✅ Clean communication!";
+        }
+    </script>
+
+</body>
+</html>

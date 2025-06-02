@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Goal Setter - Battle Royale Edition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        select, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+        }
+
+        .game-section, .loot-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 80%;
+            margin: 15px auto;
+        }
+
+        .goal-card, .loot-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .goal-card input {
+            border: none;
+            font-size: 16px;
+            padding: 5px;
+            width: 80%;
+        }
+
+        .goal-card button {
+            background: red;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎯 Auto Goal Setter - Battle Royale Edition</h1>
+    <p>Personalized game tracking for Free Fire, Valorant, BGMI, PUBG, and Call of Duty.</p>
+
+    <button onclick="generateGoals()">Set Goals</button>
+    <div id="goalContainer"></div>
+
+    <h2>📦 Loot Tracker</h2>
+    <select id="dropPoint">
+        <option value="Pochinki">Pochinki (PUBG)</option>
+        <option value="Clock Tower">Clock Tower (Free Fire)</option>
+        <option value="Fracture">Fracture (Valorant)</option>
+        <option value="Nuketown">Nuketown (Call of Duty)</option>
+        <option value="Military Base">Military Base (BGMI)</option>
+    </select>
+    <button onclick="trackLoot()">Track Loot</button>
+
+    <div id="lootContainer"></div>
+
+    <script>
+        const playerStats = {
+            freefire: { accuracy: 75, survivalTime: 20, winRate: 40 },
+            valorant: { accuracy: 68, headshotRate: 30, winRate: 55 },
+            bgmi: { survivalTime: 18, killsPerMatch: 3, winRate: 35 },
+            pubg: { sniperAccuracy: 65, playtime: 100, winRate: 45 },
+            cod: { reactionTime: 0.5, accuracy: 70, killStreak: 10 }
+        };
+
+        let goals = JSON.parse(localStorage.getItem("userGoals")) || [];
+        let lootData = JSON.parse(localStorage.getItem("lootStats")) || [];
+
+        function generateGoals() {
+            goals = [];
+
+            if (playerStats.freefire.accuracy < 80) {
+                goals.push({ game: "Free Fire", goal: "🔫 Improve accuracy to 80%" });
+            }
+            if (playerStats.freefire.survivalTime < 30) {
+                goals.push({ game: "Free Fire", goal: "🛡️ Survive at least 30 minutes per match" });
+            }
+
+            if (playerStats.valorant.headshotRate < 40) {
+                goals.push({ game: "Valorant", goal: "🎯 Increase headshot rate to 40%" });
+            }
+
+            if (playerStats.bgmi.killsPerMatch < 5) {
+                goals.push({ game: "BGMI", goal: "💥 Get at least 5 kills per match" });
+            }
+
+            if (playerStats.pubg.sniperAccuracy < 75) {
+                goals.push({ game: "PUBG", goal: "🏹 Improve sniper accuracy to 75%" });
+            }
+
+            if (playerStats.cod.killStreak < 15) {
+                goals.push({ game: "Call of Duty", goal: "🔥 Achieve a kill streak of 15+" });
+            }
+
+            localStorage.setItem("userGoals", JSON.stringify(goals));
+            renderGoals();
+        }
+
+        function renderGoals() {
+            const goalContainer = document.getElementById("goalContainer");
+            goalContainer.innerHTML = "";
+
+            if (goals.length === 0) {
+                goalContainer.innerHTML = "<p>✅ You're performing great! No new goals needed.</p>";
+                return;
+            }
+
+            const gameSections = {};
+
+            goals.forEach(goal => {
+                if (!gameSections[goal.game]) {
+                    gameSections[goal.game] = document.createElement("div");
+                    gameSections[goal.game].className = "game-section";
+                    gameSections[goal.game].innerHTML = `<h2>${goal.game}</h2>`;
+                }
+
+                const goalCard = document.createElement("div");
+                goalCard.className = "goal-card";
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = goal.goal;
+                input.onchange = function() {
+                    goal.goal = this.value;
+                    localStorage.setItem("userGoals", JSON.stringify(goals));
+                };
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.innerText = "❌";
+                deleteBtn.onclick = function() {
+                    goals = goals.filter(g => g !== goal);
+                    localStorage.setItem("userGoals", JSON.stringify(goals));
+                    renderGoals();
+                };
+
+                goalCard.appendChild(input);
+                goalCard.appendChild(deleteBtn);
+                gameSections[goal.game].appendChild(goalCard);
+            });
+
+            Object.values(gameSections).forEach(section => goalContainer.appendChild(section));
+        }
+
+        function trackLoot() {
+            const dropPoint = document.getElementById("dropPoint").value;
+
+            const lootItems = ["AKM", "Sniper", "Shield", "Medkit", "Ammo"];
+            const pickedLoot = lootItems[Math.floor(Math.random() * lootItems.length)];
+
+            lootData.push({ dropPoint, loot: pickedLoot, time: new Date().toISOString() });
+            localStorage.setItem("lootStats", JSON.stringify(lootData));
+
+            renderLootStats();
+        }
+
+        function renderLootStats() {
+            const lootContainer = document.getElementById("lootContainer");
+            lootContainer.innerHTML = "";
+
+            if (lootData.length === 0) {
+                lootContainer.innerHTML = "<p>No loot tracked yet!</p>";
+                return;
+            }
+
+            lootData.forEach(entry => {
+                const lootCard = document.createElement("div");
+                lootCard.className = "loot-container";
+                lootCard.innerHTML = `
+                    <div class="loot-card">
+                        <p>📍 ${entry.dropPoint} - 🎒 ${entry.loot}</p>
+                        <small>${new Date(entry.time).toLocaleTimeString()}</small>
+                    </div>
+                `;
+                lootContainer.appendChild(lootCard);
+            });
+        }
+
+        renderGoals();
+        renderLootStats();
+    </script>
+
+</body>
+</html>

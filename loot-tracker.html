@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Tracker - Auto Goal Setter</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        select, button, input {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .tracker-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 80%;
+            margin: 15px auto;
+        }
+
+        canvas {
+            width: 100%;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎯 Game Performance & Loot Tracking</h1>
+
+    <!-- Game Map Selection -->
+    <h2>Select Game Map</h2>
+    <select id="gameMap" onchange="updateDropPoints()">
+        <option value="pubg">PUBG</option>
+        <option value="freefire">Free Fire</option>
+        <option value="bgmi">BGMI</option>
+        <option value="cod">Call of Duty</option>
+        <option value="valorant">Valorant</option>
+    </select>
+
+    <!-- Drop Point Selection -->
+    <h2>Select Drop Point</h2>
+    <select id="dropPoint"></select>
+    <button onclick="trackSurvival()">Track Survival Rate</button>
+
+    <div id="mapContainer"></div>
+
+    <div class="tracker-container">
+        <h3>Survival Rate Analysis</h3>
+        <canvas id="survivalChart"></canvas>
+    </div>
+
+    <!-- Match Tracking -->
+    <h2>Record Match Result</h2>
+    <select id="matchResult">
+        <option value="win">Win</option>
+        <option value="top_10">Top 10 Finish</option>
+        <option value="loss">Loss</option>
+    </select>
+    <button onclick="recordMatch()">Track Match</button>
+
+    <div class="tracker-container">
+        <h3>Win/Loss Ratio</h3>
+        <canvas id="winLossChart"></canvas>
+    </div>
+
+    <!-- Weapon Stats -->
+    <h2>Track Weapon Effectiveness</h2>
+    <select id="weaponType">
+        <option value="AKM">AKM</option>
+        <option value="Sniper">Sniper</option>
+        <option value="Shotgun">Shotgun</option>
+        <option value="SMG">SMG</option>
+        <option value="Pistol">Pistol</option>
+    </select>
+    <button onclick="trackWeapon()">Track Kill</button>
+
+    <div class="tracker-container">
+        <h3>Weapon Effectiveness</h3>
+        <canvas id="weaponChart"></canvas>
+    </div>
+
+    <script>
+        const maps = {
+            pubg: { image: "https://example.com/pubg-map.jpg", dropPoints: ["Pochinki", "School", "Rozhok"] },
+            freefire: { image: "https://example.com/freefire-map.jpg", dropPoints: ["Clock Tower", "Peak", "Factory"] },
+            bgmi: { image: "https://example.com/bgmi-map.jpg", dropPoints: ["Military Base", "Gatka", "Shelter"] },
+            cod: { image: "https://example.com/cod-map.jpg", dropPoints: ["Nuketown", "Standoff", "Downtown"] },
+            valorant: { image: "https://example.com/valorant-map.jpg", dropPoints: ["Fracture", "Bind", "Haven"] }
+        };
+
+        let survivalData = JSON.parse(localStorage.getItem("survivalStats")) || {};
+        let matchHistory = JSON.parse(localStorage.getItem("matchStats")) || { win: 0, top_10: 0, loss: 0 };
+        let weaponStats = JSON.parse(localStorage.getItem("weaponStats")) || { AKM: 0, Sniper: 0, Shotgun: 0, SMG: 0, Pistol: 0 };
+
+        function updateDropPoints() {
+            const selectedGame = document.getElementById("gameMap").value;
+            const dropPointSelector = document.getElementById("dropPoint");
+            const mapContainer = document.getElementById("mapContainer");
+
+            dropPointSelector.innerHTML = "";
+            maps[selectedGame].dropPoints.forEach(point => {
+                const option = document.createElement("option");
+                option.value = point;
+                option.innerText = point;
+                dropPointSelector.appendChild(option);
+            });
+
+            mapContainer.innerHTML = `<img src="${maps[selectedGame].image}" alt="${selectedGame} Map">`;
+            renderSurvivalChart();
+        }
+
+        function trackSurvival() {
+            const dropPoint = document.getElementById("dropPoint").value;
+            const gameMap = document.getElementById("gameMap").value;
+            const survivalChance = Math.floor(Math.random() * 100);
+
+            if (!survivalData[gameMap]) survivalData[gameMap] = {};
+            survivalData[gameMap][dropPoint] = survivalChance;
+            localStorage.setItem("survivalStats", JSON.stringify(survivalData));
+
+            renderSurvivalChart();
+        }
+
+        function recordMatch() {
+            const result = document.getElementById("matchResult").value;
+            matchHistory[result]++;
+            localStorage.setItem("matchStats", JSON.stringify(matchHistory));
+            renderMatchChart();
+        }
+
+        function trackWeapon() {
+            const weapon = document.getElementById("weaponType").value;
+            weaponStats[weapon]++;
+            localStorage.setItem("weaponStats", JSON.stringify(weaponStats));
+            renderWeaponChart();
+        }
+
+        function renderSurvivalChart() {
+            const gameMap = document.getElementById("gameMap").value;
+            const dropPoints = Object.keys(survivalData[gameMap] || {});
+            const survivalRates = dropPoints.map(point => survivalData[gameMap][point]);
+
+            const ctx = document.getElementById("survivalChart").getContext("2d");
+            new Chart(ctx, {
+                type: "bar",
+                data: { labels: dropPoints, datasets: [{ label: "Survival Rate (%)", data: survivalRates, backgroundColor: "rgba(75, 192, 192, 0.6)" }] }
+            });
+        }
+
+        function renderMatchChart() {
+            const ctx = document.getElementById("winLossChart").getContext("2d");
+            new Chart(ctx, {
+                type: "pie",
+                data: { labels: ["Wins", "Top 10 Finishes", "Losses"], datasets: [{ data: [matchHistory.win, matchHistory.top_10, matchHistory.loss], backgroundColor: ["#28a745", "#ffc107", "#dc3545"] }] }
+            });
+        }
+
+        function renderWeaponChart() {
+            const ctx = document.getElementById("weaponChart").getContext("2d");
+            new Chart(ctx, {
+                type: "bar",
+                data: { labels: Object.keys(weaponStats), datasets: [{ data: Object.values(weaponStats), backgroundColor: "rgba(75, 192, 192, 0.6)" }] }
+            });
+        }
+
+        updateDropPoints();
+        renderMatchChart();
+        renderWeaponChart();
+    </script>
+
+</body>
+</html>

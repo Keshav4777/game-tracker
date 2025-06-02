@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Game Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script> 
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Add after Font Awesome -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .category-badge {
+      display: inline-block;
+      background: linear-gradient(to right, #6a5acd, #ff7e5f);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+    
+    /* Game Journey */
+    #game-journey input[type="text"] {
+      background-color: #f9f9f9;
+    }
+    
+    #suggestions {
+      position: absolute;
+      width: 90%;
+      z-index: 10;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #suggestions li {
+      padding: 10px;
+      cursor: pointer;
+    }
+    #suggestions li:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .game-card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    .game-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .game-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
+    .game-category {
+      display: inline-block;
+      background: linear-gradient(to right, #6a5acd, #ff7e5f);
+      color: white;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      border-radius: 15px;
+      margin-top: 6px;
+    }
+    
+    .remove-btn {
+      float: right;
+      color: red;
+      cursor: pointer;
+      font-size: 1.2rem;
+      margin-left: 10px;
+    }
+    
+    .added-badge {
+      background: green;
+      color: white;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      border-radius: 15px;
+      float: right;
+    }
+
+    /* NEW: Completion Tracking Styles */
+    .status-select {
+      background-color: #f8f9fa;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      width: 100%;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .status-select option[value="Not Started"] { color: #6b7280; }
+    .status-select option[value="In Progress"] { color: #f59e0b; }
+    .status-select option[value="Completed"] { color: #10b981; }
+    .status-select option[value="Abandoned"] { color: #ef4444; }
+
+    .achievements input {
+      border-color: #e2e8f0;
+      text-align: center;
+      width: 3rem;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .completion-date {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <!-- Navbar -->
+  <nav class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">GameTracker</h1>
+      <ul class="flex gap-4">
+        <li><a href="#dashboard" class="hover:text-yellow-300">Dashboard</a></li>
+        <li><a href="#add-game" class="hover:text-yellow-300">Add Game</a></li>
+        <li><a href="#categories" class="hover:text-yellow-300">Categories</a></li>
+        <li><a href="#game-journey" class="hover:text-yellow-300">My Journey</a></li>
+        <li><a href="features.html" class="hover:text-yellow-300 font-bold">Top Features</a></li>
+        <li><a href="Trigger.html" class="hover:text-yellow-300 font-bold">Trigger</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white py-20 text-center">
+    <h2 class="text-4xl font-bold mb-4">Track Your Gaming Journey</h2>
+    <p class="text-lg max-w-xl mx-auto">Log your favorite games, track playtime, share reviews, and reach your gaming goals!</p>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard" class="py-10">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-semibold">Your Game Library</h3>
+        <div class="flex gap-4">
+          <button onclick="exportList()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full">
+            <i class="fas fa-download mr-2"></i>Export
+          </button>
+          <label class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full cursor-pointer">
+            <i class="fas fa-upload mr-2"></i>Import
+            <input type="file" accept=".json" onchange="importList(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+      <div id="game-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Game cards will be added here dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Add Game Form -->
+  <section id="add-game" class="py-10 bg-white">
+    <div class="container mx-auto px-4">
+      <h3 class="text-2xl font-semibold mb-4">Add a New Game</h3>
+      <form id="game-form" class="space-y-4">
+        <input type="text" id="game-title" placeholder="Game Title" required class="w-full p-3 border rounded" />
+        <input type="text" id="game-category" placeholder="Category (e.g., Battle Royale)" required class="w-full p-3 border rounded" />
+        <input type="number" id="playtime" placeholder="Hours Played" required class="w-full p-3 border rounded" />
+        <textarea id="review" placeholder="Write your experience..." class="w-full p-3 border rounded"></textarea>
+        
+        <!-- NEW: Completion Tracking Fields -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Initial Status</label>
+            <select id="initial-status" class="w-full p-3 border rounded">
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Abandoned">Abandoned</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Total Achievements (optional)</label>
+            <input type="number" id="total-achievements" min="0" class="w-full p-3 border rounded" />
+          </div>
+        </div>
+        
+        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full">
+          <i class="fas fa-plus mr-2"></i>Add Game
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section id="categories" class="py-10 bg-gray-100">
+    <div class="container mx-auto px-4">
+      <h3 class="text-2xl font-semibold mb-4">Browse by Category</h3>
+      <div class="flex flex-wrap gap-4">
+        <button onclick="filterByCategory('Educational')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full">Educational</button>
+        <button onclick="filterByCategory('Kids')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full">Kids</button>
+        <button onclick="filterByCategory('Battle Royale')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">Battle Royale</button>
+        <button onclick="filterByCategory('Timepass')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full">Timepass</button>
+        <button onclick="filterByCategory('PC')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-full">PC Games</button>
+        <button onclick="resetFilter()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-full">All</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- My Game Journey -->
+  <section id="game-journey" class="py-20 bg-white px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-4">My Game Journey</h2>
+      <p class="text-center text-gray-600 max-w-xl mx-auto mb-10">Track your progress toward completing 100 games!</p>
+
+      <!-- Progress Bar -->
+      <div class="mb-8">
+        <div class="flex justify-between mb-2">
+          <span class="font-medium">Games Played</span>
+          <span id="game-count" class="font-bold">0/100</span>
+        </div>
+        <div class="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
+          <div id="progress-bar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-4" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Search RAWG.io -->
+      <div class="mb-8 relative">
+        <input type="text" id="search-game" placeholder="Search for a game..." class="w-full p-3 border rounded" />
+        <ul id="suggestions" class="mt-2 bg-white border rounded shadow-md hidden absolute w-full z-10"></ul>
+      </div>
+
+      <!-- Game List -->
+      <div id="tracked-games" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="modal-content bg-white p-6 rounded-lg max-w-md mx-auto mt-20">
+      <h3 class="text-2xl mb-4">Login / Register</h3>
+      <form id="auth-form">
+        <input type="email" id="auth-email" placeholder="Email" class="w-full p-2 mb-2 border">
+        <input type="password" id="auth-password" placeholder="Password" class="w-full p-2 mb-4 border">
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white p-6 text-center">
+    <p>&copy; 2025 GameTracker. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Game data storage
+    let games = [];
+    let trackedGames = [];
+    let currentFilter = null;
+
+    // DOM Elements
+    const gameListEl = document.getElementById('game-list');
+    const gameForm = document.getElementById('game-form');
+    const searchInput = document.getElementById('search-game');
+    const suggestionsEl = document.getElementById('suggestions');
+    const progressBar = document.getElementById('progress-bar');
+    const gameCountEl = document.getElementById('game-count');
+    const trackedGamesEl = document.getElementById('tracked-games');
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadGames();
+      loadTrackedGames();
+      
+      // Form submission
+      gameForm.addEventListener('submit', addManualGame);
+      
+      // Search functionality
+      searchInput.addEventListener('input', debounce(searchGames, 300));
+    });
+
+    // Load games from localStorage
+    function loadGames() {
+      const savedGames = localStorage.getItem('games');
+      if (savedGames) {
+        games = JSON.parse(savedGames);
+        renderGames();
+      }
+    }
+
+    // Load tracked games from localStorage
+    function loadTrackedGames() {
+      const savedTrackedGames = localStorage.getItem('trackedGames');
+      if (savedTrackedGames) {
+        trackedGames = JSON.parse(savedTrackedGames);
+        updateProgress();
+        renderTrackedGames();
+      }
+    }
+
+    // Save games to localStorage
+    function saveGames() {
+      localStorage.setItem('games', JSON.stringify(games));
+    }
+
+    // Save tracked games to localStorage
+    function saveTrackedGames() {
+      localStorage.setItem('trackedGames', JSON.stringify(trackedGames));
+    }
+
+    // Render games to dashboard
+    function renderGames() {
+      gameListEl.innerHTML = '';
+      
+      const gamesToRender = currentFilter 
+        ? games.filter(game => game.category === currentFilter)
+        : games;
+      
+      if (gamesToRender.length === 0) {
+        gameListEl.innerHTML = '<p class="text-center col-span-3 py-10">No games found. Add some games to get started!</p>';
+        return;
+      }
+      
+      gamesToRender.forEach((game, index) => {
+        const gameCard = document.createElement('div');
+        gameCard.className = 'card';
+        gameCard.innerHTML = `
+          <div class="flex justify-between items-start">
+            <h3 class="font-bold text-lg">${game.title}</h3>
+            <span class="category-badge">${game.category}</span>
+          </div>
+          
+          <!-- Completion Status -->
+          <div class="mt-2">
+            <select class="status-select" data-game-id="${game.id}" 
+                    onchange="updateCompletionStatus('${game.id}', this.value)">
+              <option value="Not Started" ${game.completionStatus === 'Not Started' ? 'selected' : ''}>Not Started</option>
+              <option value="In Progress" ${game.completionStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
+              <option value="Completed" ${game.completionStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+              <option value="Abandoned" ${game.completionStatus === 'Abandoned' ? 'selected' : ''}>Abandoned</option>
+            </select>
+            
+            ${game.completionStatus === 'Completed' ? `
+              <div class="completion-date">
+                Completed on: ${new Date(game.completionDate).toLocaleDateString()}
+              </div>
+            ` : ''}
+          </div>
+          
+          <p class="text-gray-600 mt-2">${game.playtime} hours played</p>
+          
+          ${game.review ? `<p class="mt-2 italic">"${game.review}"</p>` : ''}
+          
+          ${game.totalAchievements > 0 ? `
+            <div class="achievements mt-2 text-sm">
+              <span>Achievements: </span>
+              <input type="number" min="0" max="${game.totalAchievements}" 
+                     value="${game.completedAchievements || 0}" 
+                     class="achievements-input"
+                     onchange="updateAchievements('${game.id}', this.value)">
+              <span>/ ${game.totalAchievements}</span>
+            </div>
+          ` : ''}
+          
+          <div class="mt-4 flex justify-between items-center">
+            <span class="text-sm text-gray-500">Added ${new Date(game.addedAt).toLocaleDateString()}</span>
+            <button onclick="removeGame(${index})" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        gameListEl.appendChild(gameCard);
+      });
+    }
+
+    // Add game manually via form
+    function addManualGame(e) {
+      e.preventDefault();
+      
+      const newGame = {
+        id: Date.now(),
+        title: document.getElementById('game-title').value,
+        category: document.getElementById('game-category').value,
+        playtime: document.getElementById('playtime').value,
+        review: document.getElementById('review').value,
+        completionStatus: document.getElementById('initial-status').value,
+        totalAchievements: parseInt(document.getElementById('total-achievements').value) || 0,
+        completedAchievements: 0,
+        addedAt: new Date().toISOString(),
+        completionDate: document.getElementById('initial-status').value === 'Completed' 
+          ? new Date().toISOString() 
+          : null
+      };
+      
+      games.push(newGame);
+      saveGames();
+      renderGames();
+      gameForm.reset();
+    }
+
+    // Update completion status
+    function updateCompletionStatus(gameId, newStatus) {
+      const game = games.find(g => g.id == gameId);
+      if (game) {
+        game.completionStatus = newStatus;
+        
+        if (newStatus === 'Completed' && !game.completionDate) {
+          game.completionDate = new Date().toISOString();
+        }
+        
+        if (newStatus !== 'Completed') {
+          game.completionDate = null;
+        }
+        
+        saveGames();
+      }
+    }
+
+    // Update achievements
+    function updateAchievements(gameId, completed) {
+      const game = games.find(g => g.id == gameId);
+      if (game) {
+        game.completedAchievements = parseInt(completed);
+        saveGames();
+      }
+    }
+
+    // Remove game from library
+    function removeGame(index) {
+      if (confirm('Are you sure you want to remove this game?')) {
+        games.splice(index, 1);
+        saveGames();
+        renderGames();
+      }
+    }
+
+    // Filter games by category
+    function filterByCategory(category) {
+      currentFilter = category;
+      renderGames();
+    }
+
+    // Reset category filter
+    function resetFilter() {
+      currentFilter = null;
+      renderGames();
+    }
+
+    // Search games using RAWG API
+    async function searchGames() {
+      const query = searchInput.value.trim();
+      if (!query || query.length < 3) {
+        suggestionsEl.innerHTML = '';
+        suggestionsEl.classList.add('hidden');
+        return;
+      }
+
+      try {
+        // Note: Replace 'YOUR_RAWG_API_KEY' with an actual API key from RAWG.io
+        const res = await fetch(`https://api.rawg.io/api/games?key=YOUR_RAWG_API_KEY&search=${query}`);
+        const data = await res.json();
+        showSuggestions(data.results.slice(0, 5));
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        suggestionsEl.innerHTML = '<li class="p-3 text-red-500">Error fetching games. Please try again.</li>';
+        suggestionsEl.classList.remove('hidden');
+      }
+    }
+
+    // Show search suggestions
+    function showSuggestions(games) {
+      suggestionsEl.innerHTML = '';
+      
+      if (games.length === 0) {
+        suggestionsEl.innerHTML = '<li class="p-3 text-gray-500">No games found</li>';
+        suggestionsEl.classList.remove('hidden');
+        return;
+      }
+      
+      games.forEach(game => {
+        const li = document.createElement('li');
+        li.className = 'p-3 hover:bg-gray-100 cursor-pointer flex items-center';
+        li.innerHTML = `
+          <img src="${game.background_image || 'https://via.placeholder.com/50'}" 
+               alt="${game.name}" 
+               class="w-10 h-10 object-cover rounded mr-3" />
+          <span>${game.name}</span>
+        `;
+        li.addEventListener('click', () => addTrackedGame(game));
+        suggestionsEl.appendChild(li);
+      });
+      
+      suggestionsEl.classList.remove('hidden');
+    }
+
+    // Add game from RAWG to tracked games
+    function addTrackedGame(game) {
+      const exists = trackedGames.find(g => g.id === game.id);
+      if (exists) {
+        alert('This game is already in your journey!');
+        return;
+      }
+
+      const simplifiedGame = {
+        id: game.id,
+        name: game.name,
+        background_image: game.background_image,
+        genres: game.genres || [{name: 'Unknown'}],
+        released: game.released,
+        rating: game.rating,
+        completionStatus: 'Not Started',
+        addedAt: new Date().toISOString()
+      };
+
+      trackedGames.push(simplifiedGame);
+      saveTrackedGames();
+      updateProgress();
+      renderTrackedGames();
+      
+      // Clear search
+      searchInput.value = '';
+      suggestionsEl.classList.add('hidden');
+      
+      // Show success message
+      alert(`${game.name} added to your journey!`);
+    }
+
+    // Update progress bar and count
+    function updateProgress() {
+      const percent = Math.min((trackedGames.length / 100) * 100, 100);
+      progressBar.style.width = `${percent}%`;
+      gameCountEl.textContent = `${trackedGames.length}/100`;
+    }
+
+    // Render tracked games
+    function renderTrackedGames() {
+      trackedGamesEl.innerHTML = '';
+
+      if (trackedGames.length === 0) {
+        trackedGamesEl.innerHTML = `
+          <div class="col-span-3 text-center py-10">
+            <p class="text-gray-500 mb-4">Your game journey is empty</p>
+            <p>Search for games above to start tracking!</p>
+          </div>
+        `;
+        return;
+      }
+
+      trackedGames.forEach((game, index) => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.innerHTML = `
+          <img src="${game.background_image || 'https://via.placeholder.com/300x150?text=No+Image'}" 
+               alt="${game.name}" />
+          <div class="p-4">
+            <div class="flex justify-between items-start">
+              <h4 class="font-bold">${game.name}</h4>
+              <span class="text-yellow-500">
+                ${game.rating ? '★'.repeat(Math.round(game.rating)) : ''}
+              </span>
+            </div>
+            <small class="game-category">
+              ${game.genres.map(g => g.name).join(', ') || 'Unknown'}
+            </small>
+            
+            <!-- Completion Status for Tracked Games -->
+            <div class="mt-2">
+              <select class="status-select w-full" 
+                      onchange="updateTrackedGameStatus('${game.id}', this.value)"
+                      data-game-id="${game.id}">
+                <option value="Not Started" ${game.completionStatus === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                <option value="In Progress" ${game.completionStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                <option value="Completed" ${game.completionStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+              </select>
+            </div>
+            
+            <p class="text-sm text-gray-600 mt-2">
+              Released: ${game.released || 'Unknown'}
+            </p>
+            <div class="mt-4 flex justify-between items-center">
+              <span class="added-badge">Tracked</span>
+              <button onclick="removeTrackedGame(${index})" class="remove-btn">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        trackedGamesEl.appendChild(card);
+      });
+    }
+
+    // Update tracked game status
+    function updateTrackedGameStatus(gameId, newStatus) {
+      const game = trackedGames.find(g => g.id == gameId);
+      if (game) {
+        game.completionStatus = newStatus;
+        saveTrackedGames();
+      }
+    }
+
+    // Remove game from tracked games
+    function removeTrackedGame(index) {
+      if (confirm('Remove this game from your journey?')) {
+        trackedGames.splice(index, 1);
+        saveTrackedGames();
+        updateProgress();
+        renderTrackedGames();
+      }
+    }
+
+    // Export game list as JSON
+    function exportList() {
+      const dataStr = JSON.stringify(trackedGames, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `game-tracker-export-${new Date().toISOString().slice(0,10)}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+
+    // Import game list from JSON
+    function importList(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedGames = JSON.parse(e.target.result);
+          if (!Array.isArray(importedGames)) {
+            throw new Error('Invalid file format');
+          }
+          
+          // Merge with existing games, avoiding duplicates
+          importedGames.forEach(game => {
+            if (!trackedGames.some(g => g.id === game.id)) {
+              trackedGames.push(game);
+            }
+          });
+          
+          saveTrackedGames();
+          updateProgress();
+          renderTrackedGames();
+          alert(`Successfully imported ${importedGames.length} games!`);
+        } catch (error) {
+          alert('Error importing games: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Debounce function for search
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        const context = this, args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+
+    // Simple Blockchain Implementation
+    class Block {
+      constructor(index, timestamp, data, previousHash = '') {
+        this.index = index;
+        this.timestamp = timestamp;
+        this.data = data;
+        this.previousHash = previousHash;
+        this.hash = this.calculateHash();
+      }
+
+      calculateHash() {
+        return CryptoJS.SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).toString();
+      }
+    }
+
+    class Blockchain {
+      constructor() {
+        this.chain = [this.createGenesisBlock()];
+      }
+
+      createGenesisBlock() {
+        return new Block(0, new Date().toString(), "Genesis Block", "0");
+      }
+
+      getLatestBlock() {
+        return this.chain[this.chain.length - 1];
+      }
+
+      addBlock(newBlock) {
+        newBlock.previousHash = this.getLatestBlock().hash;
+        newBlock.hash = newBlock.calculateHash();
+        this.chain.push(newBlock);
+      }
+
+      isChainValid() {
+        for (let i = 1; i < this.chain.length; i++) {
+          const currentBlock = this.chain[i];
+          const previousBlock = this.chain[i - 1];
+
+          if (currentBlock.hash !== currentBlock.calculateHash()) {
+            return false;
+          }
+
+          if (currentBlock.previousHash !== previousBlock.hash) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+
+    // Initialize blockchain
+    const gameChain = new Blockchain();
+  </script>
+  <script src="js/auth.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/discord-rpc.js"></script>
+
+</body>
+</html>
